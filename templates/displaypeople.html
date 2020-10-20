@@ -1,0 +1,21 @@
+{% extends 'layout.html' %}
+
+{% block title %}Поиск людей{% endblock %}
+
+{% block content %}
+<h2>Home Page</h2>
+<p>Список людей в социальной сети: </p>
+
+
+{% for item in account %}
+
+<li><a href="displayman?username={{item['username']}}">{{item['name']}} {{item['surname']}}</a></li>
+<br>
+  
+
+{% endfor %}
+
+
+
+
+{% endblock %}

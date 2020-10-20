@@ -1,0 +1,50 @@
+{% extends 'layout.html' %}
+
+{% block title %}Profile{% endblock %}
+
+{% block content %}
+<h2>Profile Page</h2>
+<div>
+    <p>Your account details are below:</p>
+    <table>
+        <tr>
+            <td>Логин:</td>
+            <td>{{ account['username'] }}</td>
+        </tr>
+        <tr>
+            <td>Email:</td>
+            <td>{{ account['email'] }}</td>
+        </tr>
+        <tr>
+            <td>Имя:</td>
+            <td>{{ account['name'] }}</td>
+        </tr>
+        <tr>
+            <td>Фамилия:</td>
+            <td>{{ account['surname'] }}</td>
+        </tr>
+        <tr>
+            <td>Возраст:</td>
+            <td>{{ account['age'] }}</td>
+        </tr>
+        <tr>
+            <td>Пол:</td>
+            <td>{{ account['gender'] }}</td>
+        </tr>
+        <tr>
+            <td>Интересы:</td>
+            <td>{{ account['interest'] }}</td>
+        </tr>
+        <tr>
+            <td>Город:</td>
+            <td>{{ account['city'] }}</td>
+        </tr>
+
+       
+        
+
+        
+
+    </table>
+</div>
+{% endblock %}

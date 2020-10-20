@@ -1,0 +1,92 @@
+{% extends 'layout.html' %}
+
+{% block title %}Профиль{% endblock %}
+
+{% block content %}
+
+{{ account['username'] }}
+
+<h2>Профиль</h2>
+<div>
+    <p>Информация о выбранном человеке:</p>
+    <table>
+        <tr>
+            <td>Логин:</td>
+            <td>{{ account['username'] }}</td>
+        </tr>
+        <tr>
+            <td>Password:</td>
+            <td>{{ account['password'] }}</td>
+        </tr>
+        <tr>
+            <td>Email:</td>
+            <td>{{ account['email'] }}</td>
+        </tr>
+        <tr>
+            <td>Имя:</td>
+            <td>{{ account['name'] }}</td>
+        </tr>
+        <tr>
+            <td>Фамилия:</td>
+            <td>{{ account['surname'] }}</td>
+        </tr>
+        <tr>
+            <td>Возраст:</td>
+            <td>{{ account['age'] }}</td>
+        </tr>
+        <tr>
+            <td>Пол:</td>
+            <td>{{ account['gender'] }}</td>
+        </tr>
+        <tr>
+            <td>Интересы:</td>
+            <td>{{ account['interest'] }}</td>
+        </tr>
+        <tr>
+            <td>Город:</td>
+            <td></td>
+        </tr>
+
+     
+        
+
+    </table>
+
+
+    <!-- <form action="{{ url_for('addfriend') }}" method="post">
+    <input type="text" name="friend_id" id={{ account['id'] }}>
+    <input type="submit" value="Добавить в друзья">
+    </form> -->
+
+    <form action="{{ url_for('addfriend') }}" id="searchForm">
+        <input type="text" name="s" placeholder="Search...">
+        <input type="submit" value="Search">
+      </form>
+      <!-- the result of the search will be rendered inside this div -->
+      <div id="result"></div>
+       
+      <script>
+      // Attach a submit handler to the form
+      $( "#searchForm" ).submit(function( event ) {
+       
+        // Stop form from submitting normally
+        event.preventDefault();
+       
+        // Get some values from elements on the page:
+        var $form = $( this ),
+         // term = $form.find( "input[name='s']" ).val(),
+          url = $form.attr( "action" );
+       
+        // Send the data using post
+        var posting = $.post( url, { "friend_id" : "2" } );
+       
+        // Put the results in a div
+        posting.done(function( data ) {
+          var content = $( data ).find( "#content" );
+          $( "#result" ).empty().append( content );
+        });
+      });
+      </script>
+
+</div>
+{% endblock %}

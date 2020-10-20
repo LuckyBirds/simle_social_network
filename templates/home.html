@@ -1,0 +1,10 @@
+{% extends 'layout.html' %}
+
+{% block title %}Домашняя страница{% endblock %}
+
+{% block content %}
+<h2>Home Page</h2>
+<p>Добро пожаловать {{ account['name'] }} {{ account['surname'] }}!</p>
+Ваши друзья:
+<a href="{{ url_for('displaypeople')}}">Посмотреть список людей:</a>
+{% endblock %}
