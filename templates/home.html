@@ -6,5 +6,13 @@
 <h2>Home Page</h2>
 <p>Добро пожаловать {{ account['name'] }} {{ account['surname'] }}!</p>
 Ваши друзья:
-<a href="{{ url_for('displaypeople')}}">Посмотреть список людей:</a>
+
+{% for item in friends %}
+
+<li><a href="displayfriend?user_id={{item['id']}}">{{item['name']}} {{item['surname']}}</a></li>
+<br>
+  
+
+{% endfor %}
+
 {% endblock %}

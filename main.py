@@ -104,7 +104,10 @@ def home():
         cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
         cursor.execute('SELECT * FROM accounts WHERE id = %s', (session['id'],))
         account = cursor.fetchone()
-        return render_template('home.html', account=account)
+        cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
+        cursor.execute('SELECT * FROM accounts LEFT JOIN friends  ON accounts.id =  friends.friend_id WHERE friends.account_id =  %s', (session['id'],))
+        friends = cursor.fetchall()
+        return render_template('home.html', account=account, friends=friends)
     return redirect(url_for('login'))
     
 
@@ -128,14 +131,24 @@ def displaypeople():
 
 
     
-@app.route('/social/displayman')
+@app.route('/social/displayman', methods=['GET'])
 def displayman():
     if 'loggedin' in session:
-        username = request.args.get('username') 
+        user_id = request.args.get('user_id') 
         cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
-        cursor.execute('SELECT id,username, name , surname, email  FROM accounts where username = %s', (username),)
+        cursor.execute('SELECT * FROM accounts where id = %s',   [user_id])
         account = cursor.fetchone()
         return render_template('displayman.html', account=account)
+    return redirect(url_for('login'))
+
+@app.route('/social/displayfriend', methods=['GET'])
+def displayfriend():
+    if 'loggedin' in session:
+        user_id = request.args.get('user_id') 
+        cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
+        cursor.execute('SELECT * FROM accounts where id = %s',   [user_id])
+        account = cursor.fetchone()
+        return render_template('displayfriend.html', account=account)
     return redirect(url_for('login'))
 
 @app.route('/social/addfriend', methods=['POST'])
