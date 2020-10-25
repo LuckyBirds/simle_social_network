@@ -126,7 +126,10 @@ def displaypeople():
         cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
         cursor.execute('SELECT id,username, name , surname, email  FROM accounts where username != %s', (session['username']),)
         account = cursor.fetchall()
-        return render_template('displaypeople.html', account=account)
+        if account: 
+            return render_template('displaypeople.html', account=account)
+        else:
+            return "Больше никого нет"
     return redirect(url_for('login'))
 
 
