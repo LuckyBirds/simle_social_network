@@ -124,7 +124,7 @@ def profile():
 def displaypeople():
     if 'loggedin' in session:
         cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
-        cursor.execute('SELECT id,username, name , surname, email  FROM accounts where id != %s', (session['id']),)
+        cursor.execute('SELECT id,username, name , surname, email  FROM accounts where id != %s', [session['id']],)
         account = cursor.fetchall()
         if account:        
             return render_template('displaypeople.html', account=account)
