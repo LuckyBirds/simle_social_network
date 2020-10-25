@@ -30,7 +30,7 @@ def login():
         password = request.form['password']
      
         cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
-        cursor.execute('SELECT * FROM accounts WHERE username = %s', (username))
+        cursor.execute('SELECT * FROM accounts WHERE username = %s', [username])
         account = cursor.fetchone()
      
        
@@ -168,3 +168,7 @@ def addfriend():
                 mysql.connection.commit()
                 return render_template('addfriend.html', friend_name=friend_name, friend_surname=friend_surname)
     return redirect(url_for('login')) 
+
+
+if __name__ == "__main__":
+    application.run(host='0.0.0.0')
