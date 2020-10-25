@@ -7,11 +7,13 @@
 <p>Список людей в социальной сети: </p>
 
 
+
 {% for item in account %}
 
 <li><a href="displayman?user_id={{item['id']}}">{{item['name']}} {{item['surname']}}</a></li>
 <br>
-  
+{% else %}
+<p>К сожалению кроме вам никто не зарегестрировался </p>
 
 {% endfor %}
 
