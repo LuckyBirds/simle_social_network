@@ -129,7 +129,7 @@ def displaypeople():
         if account:        
             return render_template('displaypeople.html', account=account)
         else:
-            return render_template('displaypeople.html')"
+            return render_template('displaypeople.html')
     return redirect(url_for('login'))
 
 
