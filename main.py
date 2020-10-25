@@ -123,10 +123,10 @@ def profile():
 @app.route('/social/displaypeople')
 def displaypeople():
     if 'loggedin' in session:
-        if session['username']
-            cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
-            cursor.execute('SELECT id,username, name , surname, email  FROM accounts where username != %s', (session['username']),)
-            account = cursor.fetchall()
+        cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
+        cursor.execute('SELECT id,username, name , surname, email  FROM accounts where id != %s', (session['id']),)
+        account = cursor.fetchall()
+        if account:        
             return render_template('displaypeople.html', account=account)
         else:
             return "Больше никого нет"
