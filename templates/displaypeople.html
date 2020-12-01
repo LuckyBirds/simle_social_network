@@ -4,16 +4,31 @@
 
 {% block content %}
 <h2>Home Page</h2>
+
+<p>Введите имя или фамилию для поиска: </p>
+<form action="{{ url_for('displaypeople') }}" method="get" autocomplete="off">
+    <label for="name">
+        <i class="fas fa-user-tag"></i>
+    </label>
+    <input type="text" name="name" placeholder="Имя" id="name" required>
+    
+    <label for="surname">
+        <i class="fas fa-user-tag"></i>
+    </label>
+    <input type="text" name="surname" placeholder="Фамилия" id="surname" required>
+
+    <div class="msg">{{ msg }}</div>
+    <P>
+    <input type="submit" value="Найти пользователя">
+</form>
+
 <p>Список людей в социальной сети: </p>
-
-
-
 {% for item in account %}
 
 <li><a href="displayman?user_id={{item['id']}}">{{item['name']}} {{item['surname']}}</a></li>
 <br>
 {% else %}
-<p>К сожалению кроме вам никто не зарегестрировался </p>
+<p>К сожалению кроме вас никто не зарегестрировался </p>
 
 {% endfor %}
 

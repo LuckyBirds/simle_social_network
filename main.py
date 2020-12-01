@@ -5,6 +5,9 @@ from flask_security.utils import verify_password
 import MySQLdb.cursors
 import re
 import passlib
+from datetime import datetime
+
+
 
 
 app = Flask(__name__)
@@ -120,38 +123,74 @@ def profile():
         return render_template('profile.html', account=account)
     return redirect(url_for('login'))
 
-@app.route('/social/displaypeople')
+@app.route('/social/displaypeople', methods=['GET'])
 def displaypeople():
-    if 'loggedin' in session:
-        cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
-        cursor.execute('SELECT id,username, name , surname, email  FROM accounts where id != %s', [session['id']],)
-        account = cursor.fetchall()
-        if account:        
+    #if 'loggedin' in session:
+        user_name = request.args.get('name') 
+        user_surname = request.args.get('surname') 
+        if user_name:
+            cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor) 
+            user_name_String = user_name + "%" 
+            user_surname_String =  user_surname + "%"
+            cursor.execute('SELECT id,username, name , surname, email  FROM accounts where name LIKE  %s and surname LIKE %s   ORDER  BY  id ASC LIMIT 50', ([user_name_String],[user_surname_String]))
+            account = cursor.fetchall()
             return render_template('displaypeople.html', account=account)
-        else:
-            return render_template('displaypeople.html')
-    return redirect(url_for('login'))
+        else:    
+            cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
+            cursor.execute('SELECT id,username, name , surname, email  FROM accounts where id != %s LIMIT 50', [session['id']],)
+            account = cursor.fetchall()
+        
+            if account:        
+                return render_template('displaypeople.html', account=account)
+            else:
+                return render_template('displaypeople.html')
+        return redirect(url_for('login'))
 
 
     
 @app.route('/social/displayman', methods=['GET'])
 def displayman():
-    if 'loggedin' in session:
+    #if 'loggedin' in session:
+     
         user_id = request.args.get('user_id') 
         cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
         cursor.execute('SELECT * FROM accounts where id = %s',   [user_id])
         account = cursor.fetchone()
+      
         return render_template('displayman.html', account=account)
-    return redirect(url_for('login'))
+        return redirect(url_for('login'))
 
-@app.route('/social/displayfriend', methods=['GET'])
+@app.route('/social/displayfriend', methods=['GET', 'POST'])
 def displayfriend():
     if 'loggedin' in session:
-        user_id = request.args.get('user_id') 
-        cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
-        cursor.execute('SELECT * FROM accounts where id = %s',   [user_id])
-        account = cursor.fetchone()
-        return render_template('displayfriend.html', account=account)
+        if request.method == 'GET': 
+            friend_id = request.args.get('friend_id') 
+            cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
+            cursor.execute('SELECT * FROM accounts where id = %s',   [friend_id])
+            account = cursor.fetchone()
+            cursor.execute('SELECT user1.name, user2.name,  message_text, message_date FROM dialogs   \
+            left join accounts as user1 on dialogs.message_from  = user1.id \
+            left join accounts as user2 on dialogs.message_to  = user2.id \
+            where  dialogs.message_from = %s or dialogs.message_to = %s  ;',   (session['id'],session['id']))
+            
+            dialog = cursor.fetchall()
+            return render_template('displayfriend.html', account=account, dialog=dialog)
+        if request.method == 'POST':
+            friend_id = request.form.get('friend_id')
+            chat_text = request.form.get('chat_text')
+            timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+            cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
+            cursor.execute('INSERT INTO dialogs (  message_from, message_to ,message_text ,message_date )   VALUES(%s, %s, %s, %s) ', (session['id'], friend_id, chat_text, timestamp  ),)
+            mysql.connection.commit()
+            cursor.execute('SELECT * FROM accounts where id = %s',   [friend_id])
+            account = cursor.fetchone()
+            cursor.execute('SELECT user1.name, user2.name,  message_text, message_date FROM dialogs   \
+            left join accounts as user1 on dialogs.message_from  = user1.id \
+            left join accounts as user2 on dialogs.message_to  = user2.id \
+            where  dialogs.message_from = %s or dialogs.message_to = %s  ;',   (session['id'],session['id']))
+       
+            dialog = cursor.fetchall()
+            return render_template('displayfriend.html', account=account, dialog=dialog)
     return redirect(url_for('login'))
 
 @app.route('/social/addfriend', methods=['POST'])
@@ -171,6 +210,9 @@ def addfriend():
                 mysql.connection.commit()
                 return render_template('addfriend.html', friend_name=friend_name, friend_surname=friend_surname)
     return redirect(url_for('login')) 
+
+
+
 
 
 if __name__ == "__main__":

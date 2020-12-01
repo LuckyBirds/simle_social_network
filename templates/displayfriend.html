@@ -14,10 +14,6 @@
             <td>{{ account['username'] }}</td>
         </tr>
         <tr>
-            <td>Password:</td>
-            <td>{{ account['password'] }}</td>
-        </tr>
-        <tr>
             <td>Email:</td>
             <td>{{ account['email'] }}</td>
         </tr>
@@ -45,14 +41,27 @@
             <td>Город:</td>
             <td>{{ account['city'] }}</td>
         </tr>
-
-     
-        
-
+   
+    
     </table>
 
-
+    <p>Чат с другом: </p>
+    {% for item in dialog %}
+    
+    <li>{{item['message_date']}} <p> {{item['name']}} {{item['message_to']}}  {{item['message_text']}}  </a></li>
+    <br>
+        
+    {% endfor %}
    
+   
+    <form action="{{ url_for('displayfriend') }}" method="post">
+        <input type="hidden" name="friend_id" value={{ account['id'] }}>
+        <input type="text" name="chat_text" id="chat_text">
+        <input type="submit" value="Написать">
+        </form>
+   
+
+
 
 </div>
 {% endblock %}
