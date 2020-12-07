@@ -7,28 +7,17 @@
 <p>Добро пожаловать {{ account['name'] }} {{ account['surname'] }}!</p>
 
 <p>Ваши новости:</p>
-
 {% for item in news %}
 
 <li>{{item['news_date']}} {{item['news_text']}}</a></li>
 <br>
 {% endfor %}
 
-<form action="" method="post" novalidate>
-    {{ form.hidden_tag() }}
-    {{ form.news_text.label }}
-    <br>
-        {% for error in form.news_text.errors %}
-            <span style="color: red;">[{{ error }}]</span>
-        {% endfor %}
-    <br>
-    {{ form.news_text(cols="100", rows="10") }}
-
-    <br>
-    {{ form.submit() }}
-</form>
-
-
+<form action="{{ url_for('displayfriend') }}" method="post">
+    <input type="hidden" name="friend_id" value={{ account['id'] }}>
+    <input type="text" name="news_text" id="news_text">
+    <input type="submit" value="Добавить новость">
+    </form>
 
 
 <p>Ваши друзья:</p>

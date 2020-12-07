@@ -45,6 +45,9 @@
     
     </table>
 
+
+
+
     <p>Чат с другом: </p>
     {% for item in dialog %}
     
@@ -53,13 +56,36 @@
         
     {% endfor %}
    
+
+
    
-    <form action="{{ url_for('displayfriend') }}" method="post">
+    <!-- <form action="{{ url_for('displayfriend') }}" method="post">
         <input type="hidden" name="friend_id" value={{ account['id'] }}>
         <input type="text" name="chat_text" id="chat_text">
         <input type="submit" value="Написать">
-        </form>
+        </form> -->
    
+
+
+        
+    <form action="" method="post" novalidate>
+
+        {{ form.hidden_tag() }}
+        {{ form.chat_text.label }}
+        <br>
+            {% for error in form.chat_text.errors %}
+                <span style="color: red;">[{{ error }}]</span>
+            {% endfor %}
+        <br>
+        {{ form.chat_text(cols="100", rows="10") }}
+        
+        <br>
+        {{ form.submit("Написать другу") }}
+        <br>
+    </form>
+
+   
+
 
 
 
