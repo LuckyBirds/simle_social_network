@@ -4,30 +4,22 @@
 
 {% block content %}
 <h2>Home Page</h2>
-<p>Добро пожаловать {{ account['name'] }} {{ account['surname'] }}!</p>
+<p>Последние новости друзей:</p>
 
-<p>Ваши новости:</p>
 {% for item in news %}
 
-<li>{{item['news_date']}} {{item['news_text']}}</a></li>
+<li>{{item['news_date']}} {{item['acc_name']}} {{item['acc_surname']}} {{item['news_text']}} </li>
 <br>
+{% endfor %} 
+
+<p>Все новости:</p>
+
+
+{% for item in news_stream %}
+<li>{{item[1]['news_date']}} {{item[1]['author_name']}}   {{item[1]['news_text']}}</li>
+
 {% endfor %}
 
-<form action="{{ url_for('displayfriend') }}" method="post">
-    <input type="hidden" name="friend_id" value={{ account['id'] }}>
-    <input type="text" name="news_text" id="news_text">
-    <input type="submit" value="Добавить новость">
-    </form>
-
-
-<p>Ваши друзья:</p>
-
-{% for item in friends %}
-
-<li><a href="displayfriend?friend_id={{item['id']}}">{{item['name']}} {{item['surname']}}</a></li>
-<br>
-  
-
-{% endfor %}
 
 {% endblock %}
+

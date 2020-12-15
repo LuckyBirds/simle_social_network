@@ -41,7 +41,10 @@
             <td>Город:</td>
             <td>{{ account['city'] }}</td>
         </tr>
-   
+        <tr>
+            <td>Город:</td>
+            <td>{{ account['id'] }}</td>
+        </tr>
     
     </table>
 
@@ -55,18 +58,9 @@
     <br>
         
     {% endfor %}
-   
+    
 
-
-   
-    <!-- <form action="{{ url_for('displayfriend') }}" method="post">
-        <input type="hidden" name="friend_id" value={{ account['id'] }}>
-        <input type="text" name="chat_text" id="chat_text">
-        <input type="submit" value="Написать">
-        </form> -->
-   
-
-
+      
         
     <form action="" method="post" novalidate>
 
@@ -78,9 +72,10 @@
             {% endfor %}
         <br>
         {{ form.chat_text(cols="100", rows="10") }}
-        
+     
+
         <br>
-        {{ form.submit("Написать другу") }}
+        {{ form.submit() }}
         <br>
     </form>
 

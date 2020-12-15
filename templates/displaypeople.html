@@ -5,6 +5,16 @@
 {% block content %}
 <h2>Home Page</h2>
 
+{% with messages = get_flashed_messages() %}
+  {% if messages %}
+    <ul class=flashes>
+    {% for message in messages %}
+      <li>{{ message }}</li>
+    {% endfor %}
+    </ul>
+  {% endif %}
+{% endwith %}
+
 <p>Введите имя или фамилию для поиска: </p>
 <form action="{{ url_for('displaypeople') }}" method="get" autocomplete="off">
     <label for="name">

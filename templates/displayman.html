@@ -5,6 +5,8 @@
 {% block content %}
 
 
+
+
 <h2>Профиль</h2>
 <div>
     <p>Информация о выбранном человеке:</p>
@@ -52,14 +54,16 @@
     </table>
 
 
-    <form action="{{ url_for('addfriend') }}" method="post">
-    <input type="hidden" name="friend_id" value={{ account['id'] }}>
-    <input type="hidden" name="friend_name" value={{ account['name'] }}>
-    <input type="hidden" name="friend_surname" value={{ account['surname'] }}>
-    <input type="submit" value="Добавить в друзья">
-    </form>
+
 
     
+    <form action="" method="post" novalidate>
+
+        {{ form.hidden_tag() }}
+        {{ form.submit() }}
+        <br>
+    </form>
+
 
 </div>
 {% endblock %}
