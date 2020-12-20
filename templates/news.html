@@ -6,19 +6,25 @@
 <h2>Home Page</h2>
 <p>Последние новости друзей:</p>
 
-{% for item in news %}
 
-<li>{{item['news_date']}} {{item['acc_name']}} {{item['acc_surname']}} {{item['news_text']}} </li>
-<br>
-{% endfor %} 
 
 <p>Все новости:</p>
 
 
+<p> !!!!!!!!!!!!!!!!!!</p>
+
+
 {% for item in news_stream %}
-<li>{{item[1]['news_date']}} {{item[1]['author_name']}}   {{item[1]['news_text']}}</li>
+<li>{{item['news_date']}} {{item['author_name']}}   {{item['news_text']}}</li>
 
 {% endfor %}
+
+
+<!-- 
+{% for item in news_stream %}
+<li> {{item[2]}} {{item[3]}} {{item[4]}} </li>
+
+{% endfor %}  -->
 
 
 {% endblock %}

@@ -14,6 +14,7 @@ import redis
 import json
 import re
 import passlib
+import tarantool
 from datetime import datetime
 
 
@@ -24,7 +25,7 @@ app = Flask(__name__)
 
 app.config['SECRET_KEY'] = 'you-will-never-guess'
 
-app.config['MYSQL_HOST'] = '127.0.0.1'
+app.config['MYSQL_HOST'] = '172.18.151.200'
 app.config['MYSQL_USER'] = 'socialuser'
 app.config['MYSQL_PASSWORD'] = 'socialpass'
 app.config['MYSQL_DB'] = 'social'
@@ -254,21 +255,25 @@ def displayman():
 
 @app.route('/social/news', methods=['GET'])
 def news():
-    if 'loggedin' in session:
-        cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
-        cursor.execute('SELECT acc.name  as acc_name, acc.surname as acc_surname, news_text, news_date \
-        from news left join accounts as acc on news.author_id  = acc.id where author_id in \
-        (SELECT friend_id from    friends where account_id = %s)',  (session['id'],))
-        news = cursor.fetchall()
-        cursor.close()
-        r = redis.Redis(host='localhost', port=6379,  db=0, password=None, socket_timeout=None, decode_responses=True)
-        news_stream = r.xrevrange("news_stream", max=u'+', min=u'-', count=1000)
-    #cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
-    #cursor.execute('SELECT news_text, news_date, author_name from news')
-    #news_stream =  cursor.fetchall()
-    #cursor.close()
-        #return render_template('news.html',  news_stream=news_stream)
-        return render_template('news.html', news=news, news_stream=news_stream)
+#    if 'loggedin' in session:
+        # cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
+        # cursor.execute('SELECT acc.name  as acc_name, acc.surname as acc_surname, news_text, news_date \
+        # from news left join accounts as acc on news.author_id  = acc.id where author_id in \
+        # (SELECT friend_id from    friends where account_id = %s)',  (session['id'],))
+        # news = cursor.fetchall()
+        # cursor.close()
+        # # r = redis.Redis(host='localhost', port=6379,  db=0, password=None, socket_timeout=None, decode_responses=True)
+        # news_stream = r.xrevrange("news_stream", max=u'+', min=u'-', count=1000)
+    cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
+    cursor.execute('SELECT news_text, news_date, author_name from news')
+    news_stream =  cursor.fetchall()
+    cursor.close()
+    #connection = tarantool.connect("172.18.151.200", 3301)
+    #mysqldata = connection.space('mysqldata')
+    #news_stream = mysqldata.select()
+    
+    return render_template('news.html',  news_stream=news_stream)
+        # return render_template('news.html', news=news, news_stream=news_stream)
     return redirect(url_for('login')) 
 
 
