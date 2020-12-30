@@ -1,5 +1,7 @@
 from flask import Flask, render_template, request, redirect, url_for, session, jsonify, flash
-from flask_mysqldb import MySQL
+#from flask_mysqldb import MySQL
+import pymysql
+
 from passlib.hash import pbkdf2_sha256
 from flask_security.utils import verify_password
 
@@ -9,12 +11,11 @@ from wtforms.validators import DataRequired, Email
 
 import time
 
-import MySQLdb.cursors
-import redis
+#import MySQLdb.cursors
 import json
 import re
 import passlib
-import tarantool
+
 from datetime import datetime
 
 
@@ -25,14 +26,38 @@ app = Flask(__name__)
 
 app.config['SECRET_KEY'] = 'you-will-never-guess'
 
-app.config['MYSQL_HOST'] = '172.18.151.200'
-app.config['MYSQL_USER'] = 'socialuser'
-app.config['MYSQL_PASSWORD'] = 'socialpass'
-app.config['MYSQL_DB'] = 'social'
-app.config['MYSQL_PORT'] = 3306
+#app.config['MYSQL_HOST'] = '172.20.160.200'
+#app.config['MYSQL_USER'] = 'socialuser'
+#app.config['MYSQL_PASSWORD'] = 'socialpass'
+#app.config['MYSQL_DB'] = 'social'
+#app.config['MYSQL_PORT'] = 3306
 
-mysql = MySQL(app)
 
+#mysql = MySQL(app)
+
+
+mysql_master = {
+    "host": "172.20.160.200",
+    "port": 3306,
+    "user": "socialuser",
+    "passwd": "socialpass",
+    "charset": "utf8mb4",
+    "cursorclass": pymysql.cursors.DictCursor,
+    "database": "social"
+}
+
+mysql_slave = {
+    "host": "127.0.0.1",
+    "port": 3307,
+    "user": "socialuser",
+    "passwd": "socialpass",
+    "charset": "utf8mb4",
+    "cursorclass": pymysql.cursors.DictCursor,
+    "database": "social"
+}
+
+conn = pymysql.connect(**mysql_master)
+cursor = conn.cursor()
 
 #import pdb; pdb.set_trace()
 
@@ -49,6 +74,9 @@ class NewsForm(FlaskForm):
 
 
 
+
+
+
 @app.route('/social/', methods=['GET', 'POST'])
 def login():
 
@@ -59,7 +87,7 @@ def login():
         username = request.form['username']
         password = request.form['password']
      
-        cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
+        cursor = conn.cursor()
         cursor.execute('SELECT * FROM accounts WHERE username = %s', [username])
         account = cursor.fetchone()
      
@@ -104,7 +132,7 @@ def register():
         city = request.form['city']
 
 
-        cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
+        cursor = conn.cursor()
         cursor.execute('SELECT * FROM accounts WHERE username = %s', (username,))
         account = cursor.fetchone()
         if account:
@@ -120,7 +148,7 @@ def register():
         else:
             pwd_hash =  pbkdf2_sha256.hash(password)
             cursor.execute('INSERT INTO accounts VALUES (NULL, %s, %s, %s, %s, %s, %s, %s, %s, %s)', (username, pwd_hash, email, name, surname, age, gender, interest, city,))
-            mysql.connection.commit()
+            conn.commit()
             msg = 'Вы успешно зарегестрировались!'
 
     
@@ -131,27 +159,24 @@ def register():
 @app.route('/social/home', methods=['GET', 'POST'])
 def home():
     #if 'loggedin' in session:
+        cursor = conn.cursor()
         form = NewsForm()
         if form.validate_on_submit():
             news_text = form.news_text.data
             timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-            cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
             cursor.execute('INSERT INTO news ( author_id, news_text, news_date )   VALUES(%s, %s, %s) ', (session['id'], news_text, timestamp  ),)
-            mysql.connection.commit()
+            conn.commit()
             cursor.execute('SELECT name, surname FROM accounts WHERE id = %s', (session['id'],))
             account = cursor.fetchone()
             username = account['name'] + " " + account['surname']
             cursor.close()
-            r = redis.Redis(host='localhost', port=6379,  db=0, password=None, socket_timeout=None)
-            r.xadd("news_stream",  {"news_date":timestamp, "author_name":username, "news_text":news_text})
             return redirect(url_for('home'))
-        cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
+     
         cursor.execute('SELECT * FROM accounts WHERE id = %s', (session['id'],))
         account = cursor.fetchone()
-        cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
-        cursor.execute('SELECT * FROM accounts LEFT JOIN friends  ON accounts.id =  friends.friend_id WHERE friends.account_id =  %s', (session['id'],))
+        cursor.execute('SELECT * FROM accounts LEFT JOIN friends  ON accounts.id =  friends.friend_id WHERE friends.account_id =  %s ', (session['id'],))
         friends = cursor.fetchall()
-        cursor.execute('SELECT * FROM news WHERE author_id =  %s', (session['id'],))
+        cursor.execute('SELECT * FROM news WHERE author_id =  %s limit 10', (session['id'],))
         news = cursor.fetchall()
         cursor.close()
         return render_template('home.html', account=account, friends=friends, news=news,  form=form)
@@ -161,7 +186,7 @@ def home():
 @app.route('/social/profile')
 def profile():
     if 'loggedin' in session:
-        cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
+        cursor = conn.cursor()
         cursor.execute('SELECT * FROM accounts WHERE id = %s', (session['id'],))
         account = cursor.fetchone()
         cursor.close()
@@ -174,7 +199,7 @@ def displaypeople():
         user_name = request.args.get('name') 
         user_surname = request.args.get('surname') 
         if user_name:
-            cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor) 
+            cursor = conn.cursor()
             user_name_String = user_name + "%" 
             user_surname_String =  user_surname + "%"
             cursor.execute('SELECT id,username, name , surname, email  FROM accounts where name LIKE  %s and surname LIKE %s   ORDER  BY  id ASC LIMIT 50', ([user_name_String],[user_surname_String]))
@@ -182,7 +207,7 @@ def displaypeople():
             cursor.close()
             return render_template('displaypeople.html', account=account)
         else:    
-            cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
+            cursor = conn.cursor()
             cursor.execute('SELECT id,username, name , surname, email  FROM accounts where id != %s LIMIT 50', [session['id']],)
             account = cursor.fetchall()
             cursor.close() 
@@ -200,13 +225,13 @@ def displaypeople():
 def displayfriend():
     if 'loggedin' in session:
         form = ChatForm()
-        cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
+        cursor = conn.cursor()
         if form.validate_on_submit():
             friend_id = request.args.get('friend_id')
             chat_text = form.chat_text.data
             timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
             cursor.execute('INSERT INTO dialogs (  message_from, message_to ,message_text ,message_date )   VALUES(%s, %s, %s, %s) ', (session['id'], friend_id, chat_text, timestamp  ),)
-            mysql.connection.commit()
+            сonn.commit()
             cursor.close()
             return redirect(url_for('displayfriend'))
         friend_id = request.args.get('friend_id')
@@ -227,7 +252,7 @@ def displayman():
     if 'loggedin' in session:
         form = AddFriendForm()
         user_id = request.args.get('user_id') 
-        cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
+        cursor = conn.cursor()
         if form.validate_on_submit():
             
             cursor.execute('SELECT *  FROM friends where account_id = %s and friend_id = %s', (session['id'], user_id ))
@@ -237,7 +262,7 @@ def displayman():
                 return "Этот человек уже у вас в друзьях!"
             else: 
                 cursor.execute('INSERT INTO friends ( account_id, friend_id )   VALUES(%s, %s) ', (session['id'], user_id ),)
-                mysql.connection.commit()
+                conn.commit()
                 cursor.execute('SELECT name, surname FROM accounts where id = %s',  [user_id])
                 account = cursor.fetchone()
                 flash("Пользователь "+ account['name'] +" "+ account['surname']+" добавлен в друзья", "success")
@@ -256,27 +281,49 @@ def displayman():
 @app.route('/social/news', methods=['GET'])
 def news():
 #    if 'loggedin' in session:
-        # cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
-        # cursor.execute('SELECT acc.name  as acc_name, acc.surname as acc_surname, news_text, news_date \
-        # from news left join accounts as acc on news.author_id  = acc.id where author_id in \
-        # (SELECT friend_id from    friends where account_id = %s)',  (session['id'],))
-        # news = cursor.fetchall()
-        # cursor.close()
-        # # r = redis.Redis(host='localhost', port=6379,  db=0, password=None, socket_timeout=None, decode_responses=True)
-        # news_stream = r.xrevrange("news_stream", max=u'+', min=u'-', count=1000)
-    cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
-    cursor.execute('SELECT news_text, news_date, author_name from news')
+    # cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
+    # cursor.execute('SELECT acc.name  as acc_name, acc.surname as acc_surname, news_text, news_date \
+    # from news left join accounts as acc on news.author_id  = acc.id where author_id in \
+    # (SELECT friend_id from    friends where account_id = %s)',  (session['id'],))
+    # news = cursor.fetchall()
+    # cursor.close()
+ 
+    #mysql_slave()
+    
+
+    
+
+    #conn = pymysql.connect(**mysql_slave)
+    cursor = conn.cursor()
+    
+    
+    cursor.execute('SELECT news_text, news_date, author_name from news limit 10')
     news_stream =  cursor.fetchall()
     cursor.close()
-    #connection = tarantool.connect("172.18.151.200", 3301)
-    #mysqldata = connection.space('mysqldata')
-    #news_stream = mysqldata.select()
+
+    #conn = pymysql.connect(**mysql_master)
     
+
+    #return render_template('news.html', news=news, news_stream=news_stream)
+
     return render_template('news.html',  news_stream=news_stream)
-        # return render_template('news.html', news=news, news_stream=news_stream)
+
     return redirect(url_for('login')) 
 
 
 
+@app.route('/social/webs', methods=['GET', 'POST'])
+def webs():
+    
+    cursor = conn.cursor()
+    cursor.execute('SELECT news_text, news_date, author_name from news  LIMIT 10')
+    news_stream =  cursor.fetchall()
+    cursor.close()
+
+    
+    return render_template('webs.html',  news_stream=news_stream)
+    
+
+
 if __name__ == "__main__":
-    application.run(host='0.0.0.0')
+    application.run(debug=True,host='0.0.0.0')
