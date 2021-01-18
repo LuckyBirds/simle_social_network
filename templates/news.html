@@ -6,39 +6,48 @@
 <h2>Home Page</h2>
 
 
-<!-- <script type="text/javascript">
-    var ws = new WebSocket('ws://' + document.domain + ':' + 5001 + '/ws');
-    ws.onmessage = function (event) {
-      var messages_dom = document.getElementsByTagName('ul')[0];
-      var message_dom = document.createElement('li');
-      var content_dom = document.createTextNode('Received: ' + event.data);
-      message_dom.appendChild(content_dom);
-      messages_dom.appendChild(message_dom);
-    };
-
-    // var button = document.getElementsByTagName('button')[0];
-    // button.onclick = function() {
-    //   var content = document.getElementsByTagName('input')[0].value;
-    //   ws.send(content);
-    // };
-  </script> -->
-
 <p>Последние новости друзей:</p>
 
+
+
+
+
+
+
+<div id="news_block"> </div>
+
+{% for item in news_stream %}
+
+
+<li >{{item['news_date']}} {{item['author_name']}}   {{item['news_text']}}</li>
+
+{% endfor %}
+
+<script>
+  var ws = new WebSocket('ws://172.29.44.74:5001/?user_id={{id}}'),
+      messages = document.createElement('li');
+      ws.onmessage = function (event) {
+         var message = document.createElement('li'),
+          content = document.createTextNode(event.data);
+          message.prepend(content);
+          messages.prepend(message);
+      };
+   news_block.after(messages);
+</script>
 
 
 <p>Все новости:</p>
 
 
-<p> !!!!!!!!!!!!!!!!!!</p>
-
-
-{% for item in news_stream %}
+{% for item in news %}
 
 
 <li>{{item['news_date']}} {{item['author_name']}}   {{item['news_text']}}</li>
 
 {% endfor %}
+
+
+
 
 
 

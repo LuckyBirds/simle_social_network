@@ -18,6 +18,7 @@ import passlib
 
 from datetime import datetime
 
+import pika
 
 
 
@@ -26,18 +27,14 @@ app = Flask(__name__)
 
 app.config['SECRET_KEY'] = 'you-will-never-guess'
 
-#app.config['MYSQL_HOST'] = '172.20.160.200'
-#app.config['MYSQL_USER'] = 'socialuser'
-#app.config['MYSQL_PASSWORD'] = 'socialpass'
-#app.config['MYSQL_DB'] = 'social'
-#app.config['MYSQL_PORT'] = 3306
 
 
-#mysql = MySQL(app)
+
+credentials = pika.PlainCredentials('admin', 'admin')
 
 
 mysql_master = {
-    "host": "172.20.160.200",
+    "host": "127.0.0.1",
     "port": 3306,
     "user": "socialuser",
     "passwd": "socialpass",
@@ -48,7 +45,7 @@ mysql_master = {
 
 mysql_slave = {
     "host": "127.0.0.1",
-    "port": 3307,
+    "port": 3306,
     "user": "socialuser",
     "passwd": "socialpass",
     "charset": "utf8mb4",
@@ -87,9 +84,11 @@ def login():
         username = request.form['username']
         password = request.form['password']
      
+        conn = pymysql.connect(**mysql_master)
         cursor = conn.cursor()
         cursor.execute('SELECT * FROM accounts WHERE username = %s', [username])
         account = cursor.fetchone()
+        cursor.close()
      
        
         if account:
@@ -158,29 +157,42 @@ def register():
 
 @app.route('/social/home', methods=['GET', 'POST'])
 def home():
-    #if 'loggedin' in session:
+    if 'loggedin' in session:
+        conn = pymysql.connect(**mysql_master)
         cursor = conn.cursor()
         form = NewsForm()
         if form.validate_on_submit():
             news_text = form.news_text.data
             timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+
+            #stope news in mysql database
             cursor.execute('INSERT INTO news ( author_id, news_text, news_date )   VALUES(%s, %s, %s) ', (session['id'], news_text, timestamp  ),)
             conn.commit()
             cursor.execute('SELECT name, surname FROM accounts WHERE id = %s', (session['id'],))
             account = cursor.fetchone()
             username = account['name'] + " " + account['surname']
             cursor.close()
+            
+            # sending news to the rabbitmq
+            pika_connection = pika.BlockingConnection(pika.ConnectionParameters('localhost', 5672,'/',credentials))
+            channel = pika_connection.channel()
+            channel.queue_declare(queue='news')
+            news =  {'author_id': session['id'], 'news_text': news_text, 'news_date': timestamp, 'author_name': 'Alex Berg'}
+            print(json.dumps(news))
+            channel.basic_publish(exchange='', routing_key='news',  body=json.dumps(news))
+            pika_connection.close()  
+
             return redirect(url_for('home'))
      
         cursor.execute('SELECT * FROM accounts WHERE id = %s', (session['id'],))
         account = cursor.fetchone()
         cursor.execute('SELECT * FROM accounts LEFT JOIN friends  ON accounts.id =  friends.friend_id WHERE friends.account_id =  %s ', (session['id'],))
         friends = cursor.fetchall()
-        cursor.execute('SELECT * FROM news WHERE author_id =  %s limit 10', (session['id'],))
+        cursor.execute('SELECT * FROM news WHERE author_id =  %s order by news_date DESC limit 10', (session['id'],))
         news = cursor.fetchall()
         cursor.close()
         return render_template('home.html', account=account, friends=friends, news=news,  form=form)
-    #return redirect(url_for('login'))
+    return redirect(url_for('login'))
     
 
 @app.route('/social/profile')
@@ -281,32 +293,26 @@ def displayman():
 @app.route('/social/news', methods=['GET'])
 def news():
 #    if 'loggedin' in session:
-    # cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
-    # cursor.execute('SELECT acc.name  as acc_name, acc.surname as acc_surname, news_text, news_date \
-    # from news left join accounts as acc on news.author_id  = acc.id where author_id in \
-    # (SELECT friend_id from    friends where account_id = %s)',  (session['id'],))
-    # news = cursor.fetchall()
-    # cursor.close()
- 
-    #mysql_slave()
     
+   
 
-    
-
-    #conn = pymysql.connect(**mysql_slave)
+    conn = pymysql.connect(**mysql_master)
     cursor = conn.cursor()
     
-    
-    cursor.execute('SELECT news_text, news_date, author_name from news limit 10')
+    cursor.execute('SELECT acc.name  as acc_name, acc.surname as acc_surname, news_text, news_date \
+    from news left join accounts as acc on news.author_id  = acc.id where author_id in \
+    (SELECT friend_id from    friends where account_id = %s)  limit 10',  (session['id'],))
     news_stream =  cursor.fetchall()
+    cursor.execute('SELECT news_text, news_date, author_name from news  limit 10')
+    news =  cursor.fetchall()
     cursor.close()
 
     #conn = pymysql.connect(**mysql_master)
     
 
-    #return render_template('news.html', news=news, news_stream=news_stream)
+    return render_template('news.html', news=news, news_stream=news_stream, id=session['id'])
 
-    return render_template('news.html',  news_stream=news_stream)
+    #return render_template('news.html',  news_stream=news_stream)
 
     return redirect(url_for('login')) 
 
