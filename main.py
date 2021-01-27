@@ -1,5 +1,5 @@
 from flask import Flask, render_template, request, redirect, url_for, session, jsonify, flash
-#from flask_mysqldb import MySQL
+
 import pymysql
 
 from passlib.hash import pbkdf2_sha256
@@ -11,7 +11,7 @@ from wtforms.validators import DataRequired, Email
 
 import time
 
-#import MySQLdb.cursors
+
 import json
 import re
 import passlib
@@ -20,14 +20,17 @@ from datetime import datetime
 
 import pika
 
-
+import requests 
+from requests import ReadTimeout, ConnectTimeout, HTTPError, Timeout, ConnectionError
+import logging
+import uuid
 
 app = Flask(__name__)
 
 
 app.config['SECRET_KEY'] = 'you-will-never-guess'
 
-
+logging.basicConfig(filename='request.log', filemode='w', format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 
 
 credentials = pika.PlainCredentials('admin', 'admin')
@@ -236,16 +239,26 @@ def displaypeople():
 @app.route('/social/displayfriend', methods=['GET', 'POST'])
 def displayfriend():
     if 'loggedin' in session:
+        msg = ''
         form = ChatForm()
+        conn = pymysql.connect(**mysql_master)
         cursor = conn.cursor()
+        #import pdb; pdb.set_trace()
         if form.validate_on_submit():
             friend_id = request.args.get('friend_id')
             chat_text = form.chat_text.data
             timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-            cursor.execute('INSERT INTO dialogs (  message_from, message_to ,message_text ,message_date )   VALUES(%s, %s, %s, %s) ', (session['id'], friend_id, chat_text, timestamp  ),)
-            сonn.commit()
-            cursor.close()
-            return redirect(url_for('displayfriend'))
+            requestid = str(uuid.uuid4())
+            #import pdb; pdb.set_trace()
+            logging.warning(timestamp + " | requestid: " + requestid + " | from user: " + str(session['id']) + " | to user:  " +  str(friend_id) + " | message:" + chat_text )
+            payload = {'message_from': session['id'], 'message_to': friend_id, 'message_text': chat_text, 'message_date': timestamp, 'requestid':  requestid }  
+            try:
+                r = requests.get('http://127.0.0.1:5001/sendmessage', params=payload)
+                return redirect(url_for('.displayfriend', friend_id=friend_id))
+            except requests.exceptions.RequestException as e:
+                msg = 'Проблема с соединением к сервису отправки сообщений, код ошибки:   ' + str(e) 
+                
+
         friend_id = request.args.get('friend_id')
         cursor.execute('SELECT * FROM accounts where id = %s',   [friend_id])
         account = cursor.fetchone()
@@ -255,7 +268,8 @@ def displayfriend():
         where  (dialogs.message_from = %s and dialogs.message_to = %s ) OR (dialogs.message_from = %s and dialogs.message_to = %s ) ;',   (session['id'],friend_id,friend_id,session['id']))
         dialog = cursor.fetchall()
         cursor.close()
-        return render_template('displayfriend.html', account=account, dialog=dialog, form=form )
+        
+        return render_template('displayfriend.html', account=account, dialog=dialog, form=form, msg=msg )
     return redirect(url_for('login'))
 
 
