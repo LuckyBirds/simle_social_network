@@ -25,7 +25,13 @@ from requests import ReadTimeout, ConnectTimeout, HTTPError, Timeout, Connection
 import logging
 import uuid
 
+from prometheus_flask_exporter import PrometheusMetrics
+
 app = Flask(__name__)
+metrics = PrometheusMetrics(app)
+info = metrics.info('social_info', 'social dynamic')
+
+info.set(0.1)
 
 
 app.config['SECRET_KEY'] = 'you-will-never-guess'
@@ -238,39 +244,38 @@ def displaypeople():
 
 @app.route('/social/displayfriend', methods=['GET', 'POST'])
 def displayfriend():
-    if 'loggedin' in session:
-        msg = ''
-        form = ChatForm()
-        conn = pymysql.connect(**mysql_master)
-        cursor = conn.cursor()
-        #import pdb; pdb.set_trace()
-        if form.validate_on_submit():
-            friend_id = request.args.get('friend_id')
-            chat_text = form.chat_text.data
-            timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-            requestid = str(uuid.uuid4())
-            #import pdb; pdb.set_trace()
-            logging.warning(timestamp + " | requestid: " + requestid + " | from user: " + str(session['id']) + " | to user:  " +  str(friend_id) + " | message:" + chat_text )
-            payload = {'message_from': session['id'], 'message_to': friend_id, 'message_text': chat_text, 'message_date': timestamp, 'requestid':  requestid }  
-            try:
-                r = requests.get('http://127.0.0.1:5001/sendmessage', params=payload)
-                return redirect(url_for('.displayfriend', friend_id=friend_id))
-            except requests.exceptions.RequestException as e:
-                msg = 'Проблема с соединением к сервису отправки сообщений, код ошибки:   ' + str(e) 
+    #if 'loggedin' in session:
+    msg = ''
+    form = ChatForm()
+    conn = pymysql.connect(**mysql_master)
+    cursor = conn.cursor()
+    if form.validate_on_submit():
+ 
+        friend_id = request.args.get('friend_id')
+        chat_text = form.chat_text.data
+        timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        requestid = str(uuid.uuid4())
+        logging.warning(timestamp + " | requestid: " + requestid + " | from user: " + str(session['id']) + " | to user:  " +  str(friend_id) + " | message:" + chat_text )
+        payload = {'message_from': session['id'], 'message_to': friend_id, 'message_text': chat_text, 'message_date': timestamp, 'requestid':  requestid }  
+        try:
+            r = requests.get('http://127.0.0.1:5001/sendmessage/api/v1.0/', params=payload)
+            return redirect(url_for('.displayfriend', friend_id=friend_id))
+        except requests.exceptions.RequestException as e:
+            msg = 'Проблема с соединением к сервису отправки сообщений, код ошибки:   ' + str(e) 
                 
 
-        friend_id = request.args.get('friend_id')
-        cursor.execute('SELECT * FROM accounts where id = %s',   [friend_id])
-        account = cursor.fetchone()
-        cursor.execute('SELECT user1.name, user2.name,  message_text, message_date FROM dialogs   \
-        left join accounts as user1 on dialogs.message_from  = user1.id \
-        left join accounts as user2 on dialogs.message_to  = user2.id \
-        where  (dialogs.message_from = %s and dialogs.message_to = %s ) OR (dialogs.message_from = %s and dialogs.message_to = %s ) ;',   (session['id'],friend_id,friend_id,session['id']))
-        dialog = cursor.fetchall()
-        cursor.close()
+    friend_id = request.args.get('friend_id')
+    cursor.execute('SELECT * FROM accounts where id = %s',   [friend_id])
+    account = cursor.fetchone()
+    cursor.execute('SELECT user1.name, user2.name,  message_text, message_date FROM dialogs   \
+    left join accounts as user1 on dialogs.message_from  = user1.id \
+    left join accounts as user2 on dialogs.message_to  = user2.id \
+    where  (dialogs.message_from = %s and dialogs.message_to = %s ) OR (dialogs.message_from = %s and dialogs.message_to = %s ) ;',   (session['id'],friend_id,friend_id,session['id']))
+    dialog = cursor.fetchall()
+    cursor.close()
         
-        return render_template('displayfriend.html', account=account, dialog=dialog, form=form, msg=msg )
-    return redirect(url_for('login'))
+    return render_template('displayfriend.html', account=account, dialog=dialog, form=form, msg=msg )
+    #return redirect(url_for('login'))
 
 
 @app.route('/social/displayman', methods=['GET', 'POST'])
