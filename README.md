@@ -8,3 +8,5 @@ Fist run program:\
 export  FLASK_APP=main.py\
 flask run -h 0.0.0.0
 
+
+added nginx.conf for working with sendmessage as microservice
