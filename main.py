@@ -174,7 +174,7 @@ def home():
             news_text = form.news_text.data
             timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
-            #stope news in mysql database
+            #store news in mysql database
             cursor.execute('INSERT INTO news ( author_id, news_text, news_date )   VALUES(%s, %s, %s) ', (session['id'], news_text, timestamp  ),)
             conn.commit()
             cursor.execute('SELECT name, surname FROM accounts WHERE id = %s', (session['id'],))
@@ -195,10 +195,12 @@ def home():
      
         cursor.execute('SELECT * FROM accounts WHERE id = %s', (session['id'],))
         account = cursor.fetchone()
-        cursor.execute('SELECT * FROM accounts LEFT JOIN friends  ON accounts.id =  friends.friend_id WHERE friends.account_id =  %s ', (session['id'],))
+        cursor.execute('SELECT * FROM accounts LEFT JOIN friends  ON accounts.id =  friends.friend_id LEFT JOIN messagecounter  ON accounts.id =  messagecounter .friend_id WHERE friends.account_id =  %s ', (session['id'],))
         friends = cursor.fetchall()
         cursor.execute('SELECT * FROM news WHERE author_id =  %s order by news_date DESC limit 10', (session['id'],))
         news = cursor.fetchall()
+        cursor.execute('SELECT * FROM news WHERE author_id =  %s order by news_date DESC limit 10', (session['id'],))
+
         cursor.close()
         return render_template('home.html', account=account, friends=friends, news=news,  form=form)
     return redirect(url_for('login'))
@@ -272,6 +274,10 @@ def displayfriend():
     left join accounts as user2 on dialogs.message_to  = user2.id \
     where  (dialogs.message_from = %s and dialogs.message_to = %s ) OR (dialogs.message_from = %s and dialogs.message_to = %s ) ;',   (session['id'],friend_id,friend_id,session['id']))
     dialog = cursor.fetchall()
+    #import pdb; pdb.set_trace()
+    cursor.execute('INSERT INTO counteroutbox (  message_from, message_to ,request_id , status )   VALUES(%s, %s, %s, %s) ', ( session['id'], friend_id, 'clearing', '3'),) 
+
+    conn.commit()
     cursor.close()
         
     return render_template('displayfriend.html', account=account, dialog=dialog, form=form, msg=msg )

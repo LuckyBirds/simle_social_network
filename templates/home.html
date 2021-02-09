@@ -35,7 +35,7 @@
 
 {% for item in friends %}
 
-<li><a href="displayfriend?friend_id={{item['id']}}">{{item['name']}} {{item['surname']}}</a></li>
+<li><a href="displayfriend?friend_id={{item['id']}}">{{item['name']}} {{item['surname']}}, Непрочитанных сообщений:  {{ item['new_messages'] or '0' }}  </a></li>
 <br>
   
 
