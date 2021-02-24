@@ -43,7 +43,7 @@ credentials = pika.PlainCredentials('admin', 'admin')
 
 
 mysql_master = {
-    "host": "127.0.0.1",
+    "host": "172.19.67.143",
     "port": 3306,
     "user": "socialuser",
     "passwd": "socialpass",
@@ -260,7 +260,7 @@ def displayfriend():
         logging.warning(timestamp + " | requestid: " + requestid + " | from user: " + str(session['id']) + " | to user:  " +  str(friend_id) + " | message:" + chat_text )
         payload = {'message_from': session['id'], 'message_to': friend_id, 'message_text': chat_text, 'message_date': timestamp, 'requestid':  requestid }  
         try:
-            r = requests.get('http://127.0.0.1:5001/sendmessage/api/v1.0/', params=payload)
+            r = requests.get('http://socialchat:5001/sendmessage/api/v1.0/', params=payload)
             return redirect(url_for('.displayfriend', friend_id=friend_id))
         except requests.exceptions.RequestException as e:
             msg = 'Проблема с соединением к сервису отправки сообщений, код ошибки:   ' + str(e) 
